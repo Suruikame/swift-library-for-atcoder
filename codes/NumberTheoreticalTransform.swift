@@ -4,13 +4,41 @@
 /// 単体で使う時は
 /// var ntt = NTT()
 /// ntt.numberTheoreticalTransform(&function: [ModInt], _ inverse: Bool)
+extension ModInt {
+    //p = 2^m * a + 1の時、primitiveRoot = gとしてフェルマーの小定理から、
+    //g ^(2^m * a) = (g^a) ^ (2^m) ≡ 1 (mod p)
+    //degree = m, maxroot = g^aとして定義する。
+    //aをmodPowの第二引数に渡す。
+
+    //mod = 998244353
+    static var primitiveRoot: Self = 3
+    static var degree: Int = 23
+    static var maxRoot: ModInt = 15311432 //3^119
+
+    /*
+    次数が大きい時用。mod指定がない場合はmodを超えた際に落ちるので注意。未verify。
+
+    //mod = 1224736769
+    static var primitiveRoot: Self = 3
+    static var degree: Int = 24
+    static var maxRoot: ModInt = 1098543633 //3^73
+
+    //mod = 167772161
+    static var primitiveRoot: Self = 3
+    static var degree: Int = 25
+    static var maxRoot: ModInt = 243 //3^5
+
+    //mod = 469762049
+    static var primitiveRoot: Self = 3
+    static var degree: Int = 26
+    static var maxRoot: ModInt = 2187 //3^7
+    */
+}
 struct NTT {
-    //2^i乗根。
-    var root: [ModInt] = Array(repeating: ModInt(3).toThePower(of: 119), count: 24)
-    var rootInverse: [ModInt] = Array(repeating: ModInt(3).toThePower(of: 119), count: 24)
+    var root: [ModInt] = Array(repeating: ModInt.maxRoot, count: ModInt.degree+1)
+    var rootInverse: [ModInt] = Array(repeating: 1/ModInt.maxRoot, count: ModInt.degree+1)
     init() {
-        rootInverse[23] = 1/root[23]
-        for i in (0...22).reversed() {
+        for i in (0..<ModInt.degree).reversed() {
             root[i] = root[i+1] * root[i+1]
             rootInverse[i] = rootInverse[i+1] * rootInverse[i+1]
         }
@@ -22,8 +50,9 @@ struct NTT {
         }
         return res
     }
-    func numberTheoreticalTransform(_ function: inout [ModInt], _ inverse: Bool = false){
+    func numberTheoreticalTransform(_ function:[ModInt], _ inverse: Bool = false) -> [ModInt]{
         let size = function.count
+        var function = function
         var k = 0
         while((1 << k) < size){
             k += 1
@@ -55,5 +84,7 @@ struct NTT {
         if(inverse){
             function = function.map {$0 / ModInt(size)}
         }
+        return function
     }
 }
+

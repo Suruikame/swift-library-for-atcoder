@@ -12,8 +12,9 @@ struct FFT {
         }
         return res
     }
-    func fastFourierTransform(_ function: inout [Complex<Double>], _ inverse: Bool = false){
+    func fastFourierTransform(_ function: [Complex<Double>], _ inverse: Bool = false) -> [Complex<Double>]{
         let size = function.count
+        var function = function
         var k = 0
         while((1 << k) < size){
             k += 1
@@ -41,5 +42,6 @@ struct FFT {
         if(inverse){
             function = function.map {$0 / Double(size)}
         }
+        return function
     }
 }
