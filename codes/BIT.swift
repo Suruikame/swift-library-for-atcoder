@@ -1,12 +1,11 @@
-///Binary Indexed Tree
-///初期化はvar bit = BIT<Element>(size)
-///bit.sum(upTo k: Int)で0 ~ kまでの和を求める
-///bit.add(value, to: index)でindexにvalueを加算
-struct BIT<T: AdditiveArithmetic>{
+/// Binary Indexed Tree (Fenwik Tree)
+/// 1-indexedなので注意
+/// bit.sum(upTo: k)で1~kまでの要素の和、bit.add(value, to: idx)でidxにvalueを加算
+struct BIT<T: Numeric>{
     var elements: [T]
     var size: Int
     init(_ size: Int){
-        elements = Array(repeating: T.zero, count: size)
+        elements = Array(repeating: T.zero, count: size+1)
         self.size = size
     }
     func sum(upTo k: Int) -> T{
