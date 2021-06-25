@@ -6,7 +6,7 @@ AtCoderで使用しているライブラリたちです。<br>
 
 |ライブラリ|問題|提出|備考|
 |--------|----|---|---|
-|BaseConversion|[Base 8 to 9](https://atcoder.jp/contests/typical90/tasks/typical90_bo)|https://atcoder.jp/contests/typical90/submissions/23487489||
+|BaseConversion|[Base 8 to 9](https://atcoder.jp/contests/typical90/tasks/typical90_bo)<br>[Base -2 Number](https://atcoder.jp/contests/abc105/tasks/abc105_c)|<https://atcoder.jp/contests/typical90/submissions/23487489><br><https://atcoder.jp/contests/abc105/submissions/23728670>||
 |BIT|[Shift and Inversions](https://atcoder.jp/contests/abc190/tasks/abc190_f)<br>[Range Set Query](https://atcoder.jp/contests/abc174/tasks/abc174_f)|https://atcoder.jp/contests/abc190/submissions/21521692<br><https://atcoder.jp/contests/abc174/submissions/23561952>||
 |BinarySearch|[Yokan Party](https://atcoder.jp/contests/typical90/tasks/typical90_a)|https://atcoder.jp/contests/typical90/submissions/22096245||
 |Convolution<br>FFT<br>Complex|[高速フーリエ変換](https://atcoder.jp/contests/atc001/tasks/fft_c)|<https://atcoder.jp/contests/atc001/submissions/23518743>|
