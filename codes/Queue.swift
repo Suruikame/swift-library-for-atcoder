@@ -1,4 +1,4 @@
-struct Queue<Element>{
+struct Queue<Element> {
     private var maxSize: Int
     private var elements: Array<Element?>
     init(_ size: Int = 1_000_000){
@@ -8,55 +8,77 @@ struct Queue<Element>{
     private var head = 0
     private var tail = 0
 
-    func isEmpty() -> Bool{
+    mutating func initialize() {
+        head = 0
+        tail = 0
+    }
+    func isEmpty() -> Bool {
         return head == tail
     }
     func isNotEmpty() -> Bool {
         return !isEmpty()
     }
-    func size() -> Int{
+    func size() -> Int {
         return tail > head ? tail - head : tail + maxSize - head
     }
-    mutating func pushFront(_ element: Element){
-        assert(elements[tail] == nil, "Queue is full, but pushFront() method was called.")
-        elements[(head-1+maxSize)%maxSize] = element
-        head = (head-1+maxSize) % maxSize
+    mutating func pushFront(_ element: Element) {
+        var i = head-1+maxSize
+        if i >= maxSize {
+            i -= maxSize
+        }
+        elements[i] = element
+        head = i
     }
-    mutating func pushBack(_ element: Element){
-        assert(elements[tail] == nil, "Queue is full, but pushBack() method was called.")
+    mutating func pushBack(_ element: Element) {
         elements[tail] = element
-        tail = (tail + 1) % maxSize
+        tail = tail + 1
+        if tail >= maxSize {
+            tail = 0
+        }
     }
     @discardableResult
-    mutating func popFront() -> Element{
-        assert(head != tail, "Queue is empty, but popFront() method was called.")
+    mutating func popFront() -> Element {
         let ret = elements[head]!
-        elements[head] = nil
-        head = (head + 1)%maxSize
+        head = head + 1
+        if head >= maxSize {
+            head = 0
+        }
         return ret
     }
     @discardableResult
-    mutating func popBack() -> Element{
-        assert(head != tail, "Queue is empty, but popBack() method was called")
-        let ret = elements[(tail-1+maxSize)%maxSize]!
-        elements[(tail-1+maxSize)%maxSize] = nil
-        tail = (tail-1+maxSize)%maxSize
+    mutating func popBack() -> Element {
+        var i = head-1+maxSize
+        if i >= maxSize {
+            i -= maxSize
+        }
+        let ret = elements[i]!
+        tail = i
         return ret
     }
-    mutating func front() -> Element{
-        assert(elements[head] != nil, "Queue is empty, but front() method was called")
+    mutating func front() -> Element {
         return elements[head]!
     }
-    mutating func back()-> Element{
-        assert(elements[head] != nil, "Queue is empty, but back() method was called")
-        return elements[(tail+maxSize-1) % maxSize]!
+    mutating func back()-> Element {
+        var i = head-1+maxSize
+        if i >= maxSize {
+            i -= maxSize
+        }
+        return elements[i]!
     }
     subscript(index: Int) -> Element {
         get {
-            return elements[(head + index)%maxSize]!
+            var i = head-1+maxSize
+            if i >= maxSize {
+                i -= maxSize
+            }
+            return elements[i]!
         }
         set {
-            elements[(head + index)%maxSize]! = newValue
+            var i = head-1+maxSize
+            if i >= maxSize {
+                i -= maxSize
+            }
+            elements[i]! = newValue
         }
     }
 }
