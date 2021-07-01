@@ -4,7 +4,6 @@
 /// 最大流の時はcapacityまででok, 最小費用流を求める時はcostも入れる。
 /// flow.dinic(from, to)で最大流の流量
 /// flow.minCostFlow(from, to, f) (fは流量)でfを流した時の最小コスト
-/// ToDo: dinicとminCostFlowを分ける
 struct Flow {
     struct Queue<Element>{
         private var maxSize: Int
@@ -16,6 +15,10 @@ struct Flow {
         private var head = 0
         private var tail = 0
     
+        mutating func initialize() {
+            head = 0
+            tail = 0
+        }
         func isEmpty() -> Bool{
             return head == tail
         }
@@ -26,87 +29,109 @@ struct Flow {
             return tail > head ? tail - head : tail + maxSize - head
         }
         mutating func pushFront(_ element: Element){
-            assert(elements[tail] == nil, "Queue is full, but pushFront() method was called.")
-            elements[(head-1+maxSize)%maxSize] = element
-            head = (head-1+maxSize) % maxSize
+            var i = head-1+maxSize
+            if i >= maxSize {
+                i -= maxSize
+            }
+            elements[i] = element
+            head = i
         }
         mutating func pushBack(_ element: Element){
-            assert(elements[tail] == nil, "Queue is full, but pushBack() method was called.")
             elements[tail] = element
-            tail = (tail + 1) % maxSize
+            tail = tail + 1
+            if tail >= maxSize {
+                tail = 0
+            }
         }
         @discardableResult
         mutating func popFront() -> Element{
-            assert(head != tail, "Queue is empty, but popFront() method was called.")
             let ret = elements[head]!
-            elements[head] = nil
-            head = (head + 1)%maxSize
+            head = head + 1
+            if head >= maxSize {
+                head = 0
+            }
             return ret
         }
         @discardableResult
         mutating func popBack() -> Element{
-            assert(head != tail, "Queue is empty, but popBack() method was called")
-            let ret = elements[(tail-1+maxSize)%maxSize]!
-            elements[(tail-1+maxSize)%maxSize] = nil
-            tail = (tail-1+maxSize)%maxSize
+            var i = head-1+maxSize
+            if i >= maxSize {
+                i -= maxSize
+            }
+            let ret = elements[i]!
+            tail = i
             return ret
         }
         mutating func front() -> Element{
-            assert(elements[head] != nil, "Queue is empty, but front() method was called")
             return elements[head]!
         }
         mutating func back()-> Element{
-            assert(elements[head] != nil, "Queue is empty, but back() method was called")
-            return elements[(tail+maxSize-1) % maxSize]!
+            var i = head-1+maxSize
+            if i >= maxSize {
+                i -= maxSize
+            }
+            return elements[i]!
         }
         subscript(index: Int) -> Element {
             get {
-                return elements[(head + index)%maxSize]!
+                var i = head-1+maxSize
+                if i >= maxSize {
+                    i -= maxSize
+                }
+                return elements[i]!
             }
             set {
-                elements[(head + index)%maxSize]! = newValue
+                var i = head-1+maxSize
+                if i >= maxSize {
+                    i -= maxSize
+                }
+                elements[i]! = newValue
             }
         }
     }
     //二分ヒープ
     //Min Heapなら{$0 < $1}
-    struct PriorityQueue<Element>{
+    struct PriorityQueue<Element> {
         var elements: [Element] = []
         private var sz = 0//挿入位置
         var compareFunction: (Element, Element) -> Bool
-        init(_ compareFunction: @escaping (Element, Element) -> Bool){
+        init(_ compareFunction: @escaping (Element, Element) -> Bool) {
             self.compareFunction = compareFunction
         }
-        func isEmpty() -> Bool{
+        mutating func initialize() {
+            elements = []
+            sz = 0
+        }
+        func isEmpty() -> Bool {
             return sz == 0
         }
-        func isNotEmpty() -> Bool{
+        func isNotEmpty() -> Bool {
             return sz != 0
         }
-        func top() -> Element{
+        func top() -> Element {
             return elements[0]
         }
-        mutating func push(_ value: Element){
+        mutating func push(_ value: Element) {
             var pos = sz//挿入暫定位置
             sz += 1
-            if(sz >= elements.count){
+            if(sz >= elements.count) {
                 elements.append(value)
             }else{
                 elements[pos] = value
             }
-            while(pos != 0 && !compareFunction(elements[(pos-1)/2], value)){
+            while pos != 0 && !compareFunction(elements[(pos-1)/2], value) {
                 elements[pos] = elements[(pos-1)/2]
                 pos = (pos-1)/2
             }
             elements[pos] = value
         }
         @discardableResult
-        mutating func pop() -> Element{
+        mutating func pop() -> Element {
             sz -= 1
             let res = elements[0]//根を取り出す
             var pos = 0//暫定位置
             let value = elements[sz]
-            while(pos*2+1<sz){
+            while pos*2+1<sz {
                 //根を下に下げていく
                 var left = pos*2 + 1, right = pos*2+2
                 if(right < sz && compareFunction(elements[right], elements[left])){
@@ -136,10 +161,12 @@ struct Flow {
     }
     let size: Int
     var graph: [[Edge]]
-    var iter: [Int]
-    var level: [Int]
-    var potential: [Int]
-
+    private var iter: [Int]
+    private var level: [Int]
+    private var potential: [Int]
+    private var q = Queue<Int>()
+    private var pq = PriorityQueue<(v: Int, d: Int)>({$0.d < $1.d})
+ 
     init(_ size: Int) {
         self.size = size
         self.graph = Array(repeating: [], count: size)
@@ -147,40 +174,45 @@ struct Flow {
         self.level = Array(repeating: -1, count: size)
         self.potential = Array(repeating: 0, count: size)
     }
-
+ 
     mutating func addEdge(_ from: Int, _ to: Int, _ capacity: Int = 1, _ cost: Int = 0) {
         graph[from].append(Edge(to, capacity, graph[to].count, cost))
         graph[to].append(Edge(from, 0, graph[from].count-1, -cost))
     }
     private mutating func bfs(_ s: Int) {
-        var q = Queue<Int>()
-        level = Array(repeating: -1, count: size)
+        q.initialize()
+        for i in level.indices {
+            level[i] = -1
+        }
         level[s] = 0
         q.pushBack(s)
-        while(!q.isEmpty()) {
+        while q.isNotEmpty() {
             let v = q.popFront()
             for i in graph[v] {
-                if i.capacity > 0 && level[i.to] < 0 {
-                    level[i.to] = level[v] + 1
-                    q.pushBack(i.to)
+                if i.capacity <= 0 || level[i.to] >= 0 {
+                    continue
                 }
+                level[i.to] = level[v] + 1
+                q.pushBack(i.to)
             }
         }
     }
-
+ 
     private mutating func dfs(_ v: Int, _ t: Int, _ f: Int) -> Int {
         if v == t {
             return f
         }
         for i in iter[v]..<graph[v].count {
+            iter[v] = i
             let edge = graph[v][i]
-            if edge.capacity > 0 && level[v] < level[edge.to] {
-                let d = dfs(edge.to, t, min(f, edge.capacity))
-                if d > 0 {
-                    graph[v][i].capacity -= d
-                    graph[edge.to][edge.revesedEdgeIndex].capacity += d
-                    return d
-                }
+            if edge.capacity <= 0 || level[v] >= level[edge.to] {
+                continue
+            }
+            let d = dfs(edge.to, t, min(f, edge.capacity))
+            if d > 0 {
+                graph[v][i].capacity -= d
+                graph[edge.to][edge.revesedEdgeIndex].capacity += d
+                return d
             }
         }
         return 0
@@ -195,7 +227,9 @@ struct Flow {
             if level[t] < 0 {
                 return ret
             }
-            iter = Array(repeating: 0, count: size)
+            for i in iter.indices {
+                iter[i] = 0
+            }
             var f = dfs(s, t, (1<<60))
             while f > 0 {
                 ret += f
@@ -203,7 +237,7 @@ struct Flow {
             }
         }
     }
-
+ 
     ///最小費用流
     ///指定した流量を達成できない時は-1を返す
     ///verify: ABC004D マーブル
@@ -213,11 +247,13 @@ struct Flow {
         var prev: [(vertix: Int, edge: Int)] = Array(repeating: (-1, -1), count: size)
         potential = Array(repeating: 0, count: size)
         while flow > 0 {
-            var pq = PriorityQueue<(v: Int, d: Int)>({$0.d < $1.d})
-            level = Array(repeating: (1<<60), count: size)
+            pq.initialize()
+            for i in level.indices {
+                level[i] = 1<<60
+            }
             level[s] = 0
             pq.push((s, 0))
-            while(pq.isNotEmpty()) {
+            while pq.isNotEmpty() {
                 let (v, d) = pq.pop()
                 if level[v] != d {
                     continue
@@ -225,11 +261,12 @@ struct Flow {
                 for i in 0..<graph[v].count {
                     let edge = graph[v][i]
                     let newDistance = d + edge.cost + potential[v] - potential[edge.to]
-                    if edge.capacity > 0 && level[edge.to] > newDistance {
-                        level[edge.to] = newDistance
-                        prev[edge.to] = (v, i)
-                        pq.push((edge.to, newDistance))
+                    if edge.capacity <= 0 || level[edge.to] <= newDistance {
+                        continue
                     }
+                    level[edge.to] = newDistance
+                    prev[edge.to] = (v, i)
+                    pq.push((edge.to, newDistance))
                 }
             }
             if level[t] == (1<<60) {
@@ -238,7 +275,7 @@ struct Flow {
             for i in 0..<size {
                 potential[i] += level[i]
             }
-
+ 
             var d = flow
             var v = t
             while v != s {
